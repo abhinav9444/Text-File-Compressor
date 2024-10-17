@@ -1,52 +1,59 @@
-# app.py
-from flask import Flask, request, send_file, jsonify, render_template
-from werkzeug.utils import secure_filename
 import os
-import huffman_coding
+import heapq
+from collections import defaultdict
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['COMPRESSED_FOLDER'] = 'compressed'
+class Node:
+    def __init__(self, char, freq):
+        self.char = char
+        self.freq = freq
+        self.left = None
+        self.right = None
 
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['COMPRESSED_FOLDER'], exist_ok=True)
+    def __lt__(self, other):
+        return self.freq < other.freq
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+def build_huffman_tree(data):
+    frequency = defaultdict(int)
+    for char in data:
+        frequency[char] += 1
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    if file:
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
-        # Compress the file
-        compressed_filename = f"compressed_{filename}.bin"
-        compressed_path = os.path.join(app.config['COMPRESSED_FOLDER'], compressed_filename)
-        original_size, compressed_size = huffman_coding.compress_file(file_path, compressed_path)
-        
-        compression_ratio = (1 - compressed_size / original_size) * 100
-        
-        return jsonify({
-            'message': 'File successfully uploaded and compressed',
-            'compression_ratio': compression_ratio,
-            'compressed_filename': compressed_filename
-        })
+    priority_queue = [Node(char, freq) for char, freq in frequency.items()]
+    heapq.heapify(priority_queue)
 
-@app.route('/download/<filename>')
-def download_file(filename):
-    return send_file(os.path.join(app.config['COMPRESSED_FOLDER'], filename), as_attachment=True)
+    while len(priority_queue) > 1:
+        left = heapq.heappop(priority_queue)
+        right = heapq.heappop(priority_queue)
 
-@app.route('/health-check')
-def health_check():
-    return "Server is running", 200
+        merged = Node(None, left.freq + right.freq)
+        merged.left = left
+        merged.right = right
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        heapq.heappush(priority_queue, merged)
+
+    return priority_queue[0]
+
+def build_codes(node, prefix="", codebook={}):
+    if node:
+        if node.char is not None:
+            codebook[node.char] = prefix
+        build_codes(node.left, prefix + "0", codebook)
+        build_codes(node.right, prefix + "1", codebook)
+    return codebook
+
+def compress_file(input_file_path, output_file_path):
+    with open(input_file_path, 'r') as file:
+        data = file.read()
+    
+    huffman_tree = build_huffman_tree(data)
+    huffman_codes = build_codes(huffman_tree)
+
+    compressed_data = ''.join(huffman_codes[char] for char in data)
+
+    # Save compressed data to a binary file
+    with open(output_file_path, 'wb') as file:
+        file.write(int(compressed_data, 2).to_bytes((len(compressed_data) + 7) // 8, byteorder='big'))
+
+    original_size = os.path.getsize(input_file_path)
+    compressed_size = os.path.getsize(output_file_path)
+
+    return original_size, compressed_size
