@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Compression Tool</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+        
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f39c12;
+            --background-color: #1a2a3a;
+            --text-color: #ecf0f1;
+            --card-bg-color: rgba(25, 58, 67, 0.9);
+            --kiit-green: #20dc6e;
+        }
+        
+        body, html {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            color: var(--text-color);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-55deg, #ee7752, #23a6d5, #23d5ab,#ffc420, #20dc6e, #ed2eed, #23d5ab, #23a6d5, #e73c7e, #ee7752);
+            background-size: 400% 400%;
+            animation: gradientBG 60s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating-widget {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--card-bg-color);
+            border-radius: 10px;
+            padding: 10px;
+            width: 300px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        
+        .floating-widget .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--text-color);
+        }
+        
+        .floating-widget .header h2 {
+            color: var(--secondary-color);
+            margin: 0;
+            font-size: 1.2em;
+        }
+        
+        .floating-widget .header .toggle-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: color 0.3s ease;
+        }
+
+        .floating-widget .header .toggle-btn:hover {
+            color: var(--secondary-color);
+        }
+        
+        .floating-widget .content {
+            padding: 10px 0;
+        }
+        
+        .floating-widget img {
+            width: 50px;
+            height: auto;
+            margin-bottom: 10px;
+            border-radius: 100%;
+            border: 1px solid var(--secondary-color);
+            padding: 5px;
+            background-color: var(--text-color);
+            display: block;
+            margin: 10px auto;
+            transition: transform 0.3s ease;
+        }
+        
+        .floating-widget img:hover {
+            transform: scale(1.1);
+        }
+        
+        .floating-widget p {
+            margin: 5px 0;
+            font-size: 1em;
+            text-align: center;
+        }
+        
+        .floating-widget .university {
+            color: var(--kiit-green);
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .floating-widget .github-link {
+            color: var(--text-color);
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .floating-widget .github-link:hover {
+            color: var(--secondary-color);
+        }
+
+        .floating-widget .github-link i {
+            margin-right: 10px;
+        }
+
+        .floating-widget.minimized {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            flex-grow: 1;
+        }
+        
+        .content-card {
+            background-color: var(--card-bg-color);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .content-card::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            color: var(--secondary-color);
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            border: none;
+            color: var (--text-color);
+            background-color: var(--primary-color);
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            transform: scale(0);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:hover::after {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        #uploadAnimation {
+            display: none;
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--text-color);
+            border-top: 5px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #compressionInfo {
+            font-size: 1.2em;
+            margin: 20px 0;
+            font-weight: 300;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        
+        #compressionInfo.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            .floating-widget {
+                width: 100%;
+                top: 0;
+                right: 0;
+                border-radius: 0;
+            }
+            .container {
+                padding-top: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="floating-widget">
+        <div class="header">
+            <h2>Credentials</h2>
+            <button class="toggle-btn" onclick="toggleWidget()">-</button>
+        </div>
+        <div class="content">
+            <img src="path/to/kiit-logo.png" alt="KIIT University Logo">
+            <p>Abhinav Kumar Singh</p>
+            <p>Registration Number: 12345678</p>
+            <p>3rd Year B.Tech, CSE</p>
+            <p class="university">KIIT University</p>
+            <a href="https://github.com/yourusername" class="github-link">
+                <i class="fab fa-github"></i> Follow me on GitHub
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <div class="content-card">
+            <h1>File Compression Tool</h1>
+            <div class="upload-btn-wrapper">
+                <button class="btn">Upload a file</button>
+                <input type="file" id="fileInput" accept=".txt">
+            </div>
+            <div id="uploadAnimation"></div>
+            <div id="compressionInfo">Your file has been successfully compressed!</div>
+        </div>
+    </div>
+    <script>
+        function toggleWidget() {
+            const widget = document.querySelector('.floating-widget');
+            widget.classList.toggle('minimized');
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            document.getElementById('uploadAnimation').style.display = 'block';
+            setTimeout(function() {
+                document.getElementById('uploadAnimation').style.display = 'none';
+                document.getElementById('compressionInfo').classList.add('show');
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
